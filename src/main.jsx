@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.jsx';
+import {Search, Plus, Trash2, FileDown, Dumbbell, Copy, Home as HomeIcon, Library as LibraryIcon, Settings, List} from 'lucide-react';
 import './styles.css';
 
 createRoot(document.getElementById('root')).render(
