@@ -1,13 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const storageKey = 'yuvalFitnessWorkouts';
+
 const templates = {
   'Full Body': ['Squat', 'Bench Press', 'Lat Pulldown', 'Shoulder Press'],
   Push: ['Bench Press', 'Incline Press', 'Shoulder Press', 'Triceps Pushdown'],
   Pull: ['Lat Pulldown', 'Seated Row', 'Barbell Row', 'Dumbbell Curl'],
   Legs: ['Squat', 'Leg Press', 'Romanian Deadlift', 'Leg Curl']
 };
-const library = ['Bench Press', 'Incline Press', 'Cable Fly', 'Push Up', 'Lat Pulldown', 'Seated Row', 'Barbell Row', 'Squat', 'Leg Press', 'Romanian Deadlift', 'Leg Curl', 'Shoulder Press', 'Lateral Raise', 'Dumbbell Curl', 'Triceps Pushdown', 'Plank'];
+
+const library = [
+  'Bench Press', 'Incline Press', 'Cable Fly', 'Push Up',
+  'Lat Pulldown', 'Seated Row', 'Barbell Row', 'Pull Up',
+  'Squat', 'Leg Press', 'Romanian Deadlift', 'Leg Curl',
+  'Shoulder Press', 'Lateral Raise', 'Face Pull',
+  'Dumbbell Curl', 'Hammer Curl', 'Triceps Pushdown', 'Plank'
+];
 
 const makeId = () => String(Date.now()) + String(Math.random()).slice(2);
 
@@ -17,16 +25,19 @@ export default function App() {
   const [activeId, setActiveId] = useState('');
   const [query, setQuery] = useState('');
 
-  useEffect(() => localStorage.setItem(storageKey, JSON.stringify(workouts)), [workouts]);
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(workouts));
+  }, [workouts]);
 
-  const active = workouts.find(w => w.id === activeId);
-  const results = library.filter(x => x.toLowerCase().includes(query.toLowerCase()));
+  const active = workouts.find((w) => w.id === activeId);
+  const results = useMemo(() => library.filter((x) => x.toLowerCase().includes(query.toLowerCase())), [query]);
 
   function createWorkout(templateName) {
     const workout = {
       id: makeId(),
-      name: templateName + ' Workout',
-      exercises: templates[templateName].map(name => ({ id: makeId(), name, sets: 4, reps: 10, rest: 90 }))
+      name: `${templateName} Workout`,
+      createdAt: new Date().toISOString(),
+      exercises: templates[templateName].map((name) => ({ id: makeId(), name, sets: 4, reps: 10, rest: 90 }))
     };
     setWorkouts([workout, ...workouts]);
     setActiveId(workout.id);
@@ -34,32 +45,162 @@ export default function App() {
   }
 
   function updateExercise(exerciseId, field, value) {
-    setWorkouts(workouts.map(w => w.id !== activeId ? w : { ...w, exercises: w.exercises.map(e => e.id !== exerciseId ? e : { ...e, [field]: value }) }));
+    setWorkouts(workouts.map((w) => w.id !== activeId ? w : {
+      ...w,
+      exercises: w.exercises.map((e) => e.id !== exerciseId ? e : { ...e, [field]: value })
+    }));
   }
 
   function deleteExercise(exerciseId) {
-    setWorkouts(workouts.map(w => w.id !== activeId ? w : { ...w, exercises: w.exercises.filter(e => e.id !== exerciseId) }));
+    setWorkouts(workouts.map((w) => w.id !== activeId ? w : {
+      ...w,
+      exercises: w.exercises.filter((e) => e.id !== exerciseId)
+    }));
   }
 
   function addExercise(name) {
     if (!active) return;
-    setWorkouts(workouts.map(w => w.id !== activeId ? w : { ...w, exercises: [...w.exercises, { id: makeId(), name, sets: 3, reps: 10, rest: 60 }] }));
+    setWorkouts(workouts.map((w) => w.id !== activeId ? w : {
+      ...w,
+      exercises: [...w.exercises, { id: makeId(), name, sets: 3, reps: 10, rest: 60 }]
+    }));
     setScreen('editor');
+  }
+
+  function renameWorkout(value) {
+    if (!active) return;
+    setWorkouts(workouts.map((w) => w.id === active.id ? { ...w, name: value } : w));
   }
 
   return (
     <main className="app">
-      <header className="topbar"><b>YUVAL FITNESS</b>{screen !== 'home' && <button onClick={() => setScreen('home')}>Back</button>}</header>
+      <header className="topbar">
+        <button className="backButton" onClick={() => screen === 'home' ? null : setScreen('home')}>
+          {screen === 'home' ? 'YUVAL' : 'חזרה'}
+        </button>
+        <div className="brand">
+          <b>YUVAL FITNESS</b>
+          <span>Workout Builder</span>
+        </div>
+      </header>
 
-      {screen === 'home' && <section className="panel"><h1>Workout Builder</h1><button className="primary" onClick={() => setScreen('new')}>New Workout</button><button onClick={() => setScreen('workouts')}>My Workouts</button><button onClick={() => setScreen('library')}>Exercise Library</button></section>}
+      {screen === 'home' && (
+        <section className="homeScreen">
+          <div className="heroBlock">
+            <span className="kicker">מאמן כושר</span>
+            <h1>בונים אימון מהר. נקי. מסודר.</h1>
+            <p>תבניות, עריכת תרגילים, שמירה אוטומטית וייצוא PDF.</p>
+          </div>
 
-      {screen === 'new' && <section className="panel"><h2>Choose Template</h2>{Object.keys(templates).map(t => <button className="card" key={t} onClick={() => createWorkout(t)}>{t}</button>)}</section>}
+          <div className="actionList">
+            <button className="actionCard primaryCard" onClick={() => setScreen('new')}>
+              <span>
+                <b>אימון חדש</b>
+                <small>בחר תבנית והתחל לערוך</small>
+              </span>
+              <i>→</i>
+            </button>
 
-      {screen === 'workouts' && <section className="panel"><h2>My Workouts</h2>{workouts.map(w => <button className="card" key={w.id} onClick={() => { setActiveId(w.id); setScreen('editor'); }}>{w.name}<span>{w.exercises.length} exercises</span></button>)}</section>}
+            <button className="actionCard" onClick={() => setScreen('workouts')}>
+              <span>
+                <b>האימונים שלי</b>
+                <small>{workouts.length} תוכניות שמורות</small>
+              </span>
+              <i>→</i>
+            </button>
 
-      {screen === 'editor' && active && <section className="panel"><input className="title" value={active.name} onChange={e => setWorkouts(workouts.map(w => w.id === active.id ? { ...w, name: e.target.value } : w))} /><button className="primary" onClick={() => window.print()}>Export PDF</button>{active.exercises.map(ex => <div className="row" key={ex.id}><b>{ex.name}</b><label>Sets<input value={ex.sets} onChange={e => updateExercise(ex.id, 'sets', e.target.value)} /></label><label>Reps<input value={ex.reps} onChange={e => updateExercise(ex.id, 'reps', e.target.value)} /></label><label>Rest<input value={ex.rest} onChange={e => updateExercise(ex.id, 'rest', e.target.value)} /></label><button className="danger" onClick={() => deleteExercise(ex.id)}>Delete</button></div>)}<button onClick={() => setScreen('library')}>Add Exercise</button></section>}
+            <button className="actionCard" onClick={() => setScreen('library')}>
+              <span>
+                <b>ספריית תרגילים</b>
+                <small>חיפוש והוספת תרגילים</small>
+              </span>
+              <i>→</i>
+            </button>
+          </div>
+        </section>
+      )}
 
-      {screen === 'library' && <section className="panel"><h2>Exercise Library</h2><input className="search" placeholder="Search" value={query} onChange={e => setQuery(e.target.value)} />{results.map(name => <button className="card" key={name} onClick={() => addExercise(name)}>{name}</button>)}</section>}
+      {screen === 'new' && (
+        <section className="panel">
+          <div className="sectionHead">
+            <h2>בחר תבנית</h2>
+            <p>האימון ייפתח מיד לעריכה.</p>
+          </div>
+          {Object.keys(templates).map((t) => (
+            <button className="card" key={t} onClick={() => createWorkout(t)}>
+              <span>
+                <b>{t}</b>
+                <small>{templates[t].length} תרגילים</small>
+              </span>
+              <i>צור</i>
+            </button>
+          ))}
+        </section>
+      )}
+
+      {screen === 'workouts' && (
+        <section className="panel">
+          <div className="sectionHead">
+            <h2>האימונים שלי</h2>
+            <p>פתח תוכנית קיימת והמשך לערוך.</p>
+          </div>
+          {workouts.length === 0 && <div className="empty"><b>אין אימונים עדיין</b><button onClick={() => setScreen('new')}>צור אימון ראשון</button></div>}
+          {workouts.map((w) => (
+            <button className="card" key={w.id} onClick={() => { setActiveId(w.id); setScreen('editor'); }}>
+              <span>
+                <b>{w.name}</b>
+                <small>{w.exercises.length} תרגילים</small>
+              </span>
+              <i>פתח</i>
+            </button>
+          ))}
+        </section>
+      )}
+
+      {screen === 'editor' && active && (
+        <section className="editorPanel">
+          <input className="title" value={active.name} onChange={(e) => renameWorkout(e.target.value)} />
+          <div className="editorActions">
+            <button className="primary" onClick={() => setScreen('library')}>הוסף תרגיל</button>
+            <button onClick={() => window.print()}>ייצא PDF</button>
+          </div>
+
+          <div className="exerciseStack">
+            {active.exercises.map((ex) => (
+              <div className="row" key={ex.id}>
+                <div className="rowHeader">
+                  <b>{ex.name}</b>
+                  <button className="danger" onClick={() => deleteExercise(ex.id)}>מחק</button>
+                </div>
+                <label>סטים<input value={ex.sets} onChange={(e) => updateExercise(ex.id, 'sets', e.target.value)} /></label>
+                <label>חזרות<input value={ex.reps} onChange={(e) => updateExercise(ex.id, 'reps', e.target.value)} /></label>
+                <label>מנוחה<input value={ex.rest} onChange={(e) => updateExercise(ex.id, 'rest', e.target.value)} /></label>
+              </div>
+            ))}
+          </div>
+
+          <div className="summaryBar">
+            <span>{active.exercises.length} תרגילים</span>
+            <span>נשמר אוטומטית</span>
+          </div>
+        </section>
+      )}
+
+      {screen === 'library' && (
+        <section className="panel">
+          <div className="sectionHead">
+            <h2>ספריית תרגילים</h2>
+            <p>{active ? 'לחיצה על תרגיל תוסיף אותו לאימון.' : 'מאגר תרגילים ראשוני.'}</p>
+          </div>
+          <input className="search" placeholder="חיפוש" value={query} onChange={(e) => setQuery(e.target.value)} />
+          {results.map((name) => (
+            <button className="card" key={name} onClick={() => addExercise(name)}>
+              <span><b>{name}</b><small>תרגיל</small></span>
+              <i>{active ? 'הוסף' : 'צפה'}</i>
+            </button>
+          ))}
+        </section>
+      )}
     </main>
   );
 }
