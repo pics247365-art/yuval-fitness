@@ -85,46 +85,43 @@ export default function App() {
       </header>
 
       {screen === 'home' && (
-        <section className="homeScreen">
-          <div className="heroBlock">
-            <span className="kicker">מאמן כושר</span>
-            <h1>בונים אימון מהר. נקי. מסודר.</h1>
-            <p>תבניות, עריכת תרגילים, שמירה אוטומטית וייצוא PDF.</p>
-          </div>
+        <section className="homeScreen simpleHome">
+          <div className="yuvalTitle">YUVAL</div>
 
-          <div className="actionList">
+          <div className="actionList cleanMenu">
             <button className="actionCard primaryCard" onClick={() => setScreen('new')}>
-              <span>
-                <b>אימון חדש</b>
-                <small>בחר תבנית והתחל לערוך</small>
-              </span>
+              <span><b>אימון חדש</b></span>
               <i>→</i>
             </button>
 
             <button className="actionCard" onClick={() => setScreen('workouts')}>
-              <span>
-                <b>האימונים שלי</b>
-                <small>{workouts.length} תוכניות שמורות</small>
-              </span>
+              <span><b>האימונים שלי</b></span>
               <i>→</i>
             </button>
 
             <button className="actionCard" onClick={() => setScreen('library')}>
-              <span>
-                <b>ספריית תרגילים</b>
-                <small>חיפוש והוספת תרגילים</small>
-              </span>
+              <span><b>ספריית תרגילים</b></span>
+              <i>→</i>
+            </button>
+
+            <button className="actionCard" onClick={() => setScreen('templates')}>
+              <span><b>תבניות אימון</b></span>
+              <i>→</i>
+            </button>
+
+            <button className="actionCard" onClick={() => setScreen('settings')}>
+              <span><b>הגדרות</b></span>
               <i>→</i>
             </button>
           </div>
         </section>
       )}
 
-      {screen === 'new' && (
+      {(screen === 'new' || screen === 'templates') && (
         <section className="panel">
           <div className="sectionHead">
-            <h2>בחר תבנית</h2>
-            <p>האימון ייפתח מיד לעריכה.</p>
+            <h2>{screen === 'new' ? 'אימון חדש' : 'תבניות אימון'}</h2>
+            <p>בחר תבנית. האימון ייפתח מיד לעריכה.</p>
           </div>
           {Object.keys(templates).map((t) => (
             <button className="card" key={t} onClick={() => createWorkout(t)}>
@@ -199,6 +196,27 @@ export default function App() {
               <i>{active ? 'הוסף' : 'צפה'}</i>
             </button>
           ))}
+        </section>
+      )}
+
+      {screen === 'settings' && (
+        <section className="panel">
+          <div className="sectionHead">
+            <h2>הגדרות</h2>
+            <p>גרסת MVP מקומית. כל האימונים נשמרים במכשיר.</p>
+          </div>
+          <div className="settingsBox">
+            <b>שם המאמן</b>
+            <span>יובל</span>
+          </div>
+          <div className="settingsBox">
+            <b>שמירה</b>
+            <span>אוטומטית בדפדפן</span>
+          </div>
+          <div className="settingsBox">
+            <b>ייצוא</b>
+            <span>PDF דרך הדפסה</span>
+          </div>
         </section>
       )}
     </main>
